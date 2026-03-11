@@ -66,21 +66,11 @@ class OrganizationRead(BaseModel):
     address: str
     phones: List[str]
     categories: List[str]
-    #categories: List[CategoryRead]
-    """
-    @field_serializer('address', mode='plain')
-    def serialize_address(self, v: Any):
-        return v.raw_address if hasattr(v, 'raw_address') else str(v)
-
-    @field_serializer('phones')
-    def serialize_phones(self, phones: List[PhoneBase]):
-        return [p.number for p in phones]
-    """
+    
     @field_validator('address', mode='before')
     @classmethod
     def transform_address(cls, v: Any):
         return v.raw_address if hasattr(v, 'raw_address') else str(v)
-    
 
     @field_validator('phones', mode='before')
     @classmethod
@@ -88,7 +78,6 @@ class OrganizationRead(BaseModel):
         if isinstance(v, list):
             return [p.number if hasattr(p, 'number') else str(p) for p in v]
         return v
-    
 
     @field_validator('categories', mode='before')
     @classmethod

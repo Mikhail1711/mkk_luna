@@ -87,7 +87,6 @@ def test_create_organization_full(client):
  
     assert response.status_code == 200
     data = response.json()
-    #print(f"DEBUG: {response.json()}")
     assert data["name"] == "Тестовая Фирма"
     assert data["address"] == "Улица Тестов, 1"
 

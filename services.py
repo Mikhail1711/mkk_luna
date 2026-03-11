@@ -155,7 +155,6 @@ def get_list_in_radius(db: Session, lat: float, lon: float, radius_km: float = 5
     return (
         db.query(Address)
         .options(joinedload(Address.organizations))
-        #.with_entities(Organization.id, Organization.name)
         .filter(Address.latitude.between(lat - lat_delta, lat + lat_delta))
         .filter(Address.longitude.between(lon - lon_delta, lon + lon_delta))
         .filter(distance_formula <= radius_km)
