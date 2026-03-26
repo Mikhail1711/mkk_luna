@@ -3,8 +3,8 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import func, text, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Phone, Address, Category, Organization
-from schemas import CategoryCreate, OrganizationCreate
+from app.models import Phone, Address, Category, Organization
+from app.schemas import CategoryCreate, OrganizationCreate
 
 
 async def create_category(db: AsyncSession, data: CategoryCreate):
@@ -55,6 +55,12 @@ async def create_organization(db: AsyncSession, data: OrganizationCreate):
     await db.commit()
     await db.refresh(db_org)
     return db_org
+
+
+async def get_list_categories(db: AsyncSession):
+    query = select(Category)
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 async def get_list_by_category(db: AsyncSession, root_category_id: int):
