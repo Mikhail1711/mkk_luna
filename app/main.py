@@ -6,6 +6,7 @@ from fastapi.security.api_key import APIKeyHeader
 
 from app.models import Base
 from app.database import engine
+from app.api import router as orgs_router
 
 
 STATIC_KEY = os.getenv("STATIC_API_KEY")
@@ -32,3 +33,5 @@ app = FastAPI(
     title="MKK Luna API",
     description="API справочника организаций",
 )
+
+app.include_router(orgs_router)
