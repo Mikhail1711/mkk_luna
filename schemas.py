@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import List, Any
 
 
@@ -17,7 +17,7 @@ class OrganizationShort(BaseModel):
 
 class AddressRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     raw_address: str = Field(max_length=100)
 
 
@@ -66,22 +66,22 @@ class OrganizationRead(BaseModel):
     address: str
     phones: List[str]
     categories: List[str]
-    
-    @field_validator('address', mode='before')
+
+    @field_validator("address", mode="before")
     @classmethod
     def transform_address(cls, v: Any):
-        return v.raw_address if hasattr(v, 'raw_address') else str(v)
+        return v.raw_address if hasattr(v, "raw_address") else str(v)
 
-    @field_validator('phones', mode='before')
+    @field_validator("phones", mode="before")
     @classmethod
     def transform_phones(cls, v: Any):
         if isinstance(v, list):
-            return [p.number if hasattr(p, 'number') else str(p) for p in v]
+            return [p.number if hasattr(p, "number") else str(p) for p in v]
         return v
 
-    @field_validator('categories', mode='before')
+    @field_validator("categories", mode="before")
     @classmethod
     def serialize_categories(cls, v: Any):
         if isinstance(v, list):
-            return [c.name if hasattr(c, 'name') else str(c) for c in v]
+            return [c.name if hasattr(c, "name") else str(c) for c in v]
         return v

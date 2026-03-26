@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, Table
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy import Column, Integer, ForeignKey, Table
+from sqlalchemy.orm import Mapped, mapped_column, relationship, declarative_base
 
 
 Base = declarative_base()
@@ -7,7 +7,9 @@ Base = declarative_base()
 org_category_association = Table(
     "org_category_association",
     Base.metadata,
-    Column("organization_id", Integer, ForeignKey("organizations.id"), primary_key=True),
+    Column(
+        "organization_id", Integer, ForeignKey("organizations.id"), primary_key=True
+    ),
     Column("category_id", Integer, ForeignKey("categories.id"), primary_key=True),
 )
 
@@ -15,47 +17,60 @@ org_category_association = Table(
 class Phone(Base):
     __tablename__ = "phones"
 
-    id = Column(Integer, primary_key=True)
-    number = Column(String, nullable=False)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str] = mapped_column(nullable=False)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id"), index=True
+    )
 
-    organization = relationship("Organization", back_populates="phones")
+    organization: Mapped["Organization"] = relationship(back_populates="phones")
 
 
 class Address(Base):
     __tablename__ = "addresses"
 
-    id = Column(Integer, primary_key=True, index=True)
-    raw_address = Column(String, nullable=False)
-    latitude = Column(Float, index=True)
-    longitude = Column(Float, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    raw_address: Mapped[str] = mapped_column(nullable=False)
+    latitude: Mapped[float] = mapped_column(index=True)
+    longitude: Mapped[float] = mapped_column(index=True)
 
-    organizations = relationship("Organization", back_populates="address")
+    organizations: Mapped[list["Organization"]] = relationship(
+        back_populates="address", lazy="selectin"
+    )
 
 
 class Category(Base):
     __tablename__ = "categories"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    parent_id = Column(Integer, ForeignKey("categories.id"), nullable=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    parent_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id"), nullable=True, index=True
+    )
 
-    subcategories = relationship("Category", backref="parent", remote_side=[id])
-    organizations = relationship(
-        "Organization", secondary=org_category_association, back_populates="categories"
+    subcategories: Mapped[list["Category"]] = relationship(
+        backref="parent", remote_side=[id], lazy="selectin"
+    )
+    organizations: Mapped[list["Organization"]] = relationship(
+        secondary=org_category_association, back_populates="categories", lazy="selectin"
     )
 
 
 class Organization(Base):
     __tablename__ = "organizations"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True, nullable=False)
-    address_id = Column(Integer, ForeignKey('addresses.id'), index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(index=True, nullable=False)
+    address_id: Mapped[int] = mapped_column(ForeignKey("addresses.id"), index=True)
 
-    phones = relationship("Phone", back_populates="organization", cascade="all, delete-orphan")
-    address = relationship("Address", back_populates="organizations")
-    categories = relationship(
-        "Category", secondary=org_category_association, 
-        back_populates="organizations"
+    phones: Mapped[list["Phone"]] = relationship(
+        back_populates="organization", cascade="all, delete-orphan", lazy="selectin"
+    )
+    address: Mapped["Address"] = relationship(
+        back_populates="organizations", lazy="selectin"
+    )
+    categories: Mapped[list["Category"]] = relationship(
+        secondary=org_category_association,
+        back_populates="organizations",
+        lazy="selectin",
     )

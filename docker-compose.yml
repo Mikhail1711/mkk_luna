@@ -22,8 +22,8 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-    command: sh -c "sleep 7 && pytest -v -s && uvicorn main:app --host 0.0.0.0 --port 8000"
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    command: sh -c "pytest -v -s && uvicorn main:app --host 0.0.0.0 --port 8000"
 
 volumes:
   postgres_data:
