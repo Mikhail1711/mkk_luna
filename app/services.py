@@ -8,6 +8,13 @@ from app.schemas import CategoryCreate, OrganizationCreate
 
 
 async def create_category(db: AsyncSession, data: CategoryCreate):
+    query = select(Category).where(
+        Category.name == data.name, Category.parent_id == data.parent_id
+    )
+    result = await db.execute(query)
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Такая категория уже есть")
+
     depth_limit = 3
     depth = 0
     current_parent = data.parent_id

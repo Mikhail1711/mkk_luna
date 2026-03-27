@@ -1,6 +1,5 @@
 import pytest
 import os
-import asyncio
 
 
 HEADERS = {"API-KEY": os.getenv("STATIC_API_KEY")}
@@ -8,7 +7,6 @@ HEADERS = {"API-KEY": os.getenv("STATIC_API_KEY")}
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_organization_full(client):
-    print(f"\nDEBUG LOOP: {id(asyncio.get_running_loop())}")
     payload = {
         "name": "Тестовая Фирма",
         "address": {
@@ -29,10 +27,12 @@ async def test_create_organization_full(client):
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_category_depth_limit(client):
-    print(f"\nDEBUG LOOP: {id(asyncio.get_running_loop())}")
     response = await client.post("/categories/", json={"name": "L1"}, headers=HEADERS)
     assert response.status_code == 200
     level_1 = response.json()["id"]
+    response = await client.post("/categories/", json={"name": "L1"}, headers=HEADERS)
+    assert response.status_code == 400
+    assert "уже" in response.json()["detail"]
 
     response = await client.post(
         "/categories/", json={"name": "L2", "parent_id": level_1}, headers=HEADERS
@@ -50,10 +50,12 @@ async def test_category_depth_limit(client):
     assert response.status_code == 400
     assert "Превышена" in response.json()["detail"]
 
+    response = await client.get("/categories/", headers=HEADERS)
+    assert len(response.json()) == 3
+
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_geo_radius_search(client):
-    print(f"\nDEBUG LOOP: {id(asyncio.get_running_loop())}")
     await client.post(
         "/organizations/",
         json={
@@ -69,7 +71,6 @@ async def test_geo_radius_search(client):
         "/search/radius?lat=55.75&lon=37.61&radius_km=5", headers=HEADERS
     )
     assert len(res_near.json()) == 1
-    print(res_near.json())
 
     res_far = await client.get(
         "/search/radius?lat=59.93&lon=30.33&radius_km=5", headers=HEADERS
@@ -79,7 +80,6 @@ async def test_geo_radius_search(client):
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_search_by_address(client):
-    print(f"\nDEBUG LOOP: {id(asyncio.get_running_loop())}")
     addr_data = {"raw_address": "ул. Мира, 10", "latitude": 10.0, "longitude": 10.0}
 
     await client.post(
@@ -100,8 +100,6 @@ async def test_search_by_address(client):
     response = await client.get(
         f"/search/address?address_str={addr_data['raw_address']}", headers=HEADERS
     )
-
-    print(f"DEBUG: Status {response.status_code}, Body: {response.json()}")
     assert response.status_code == 200
     data = response.json()
 

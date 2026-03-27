@@ -1,7 +1,8 @@
 import os
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 import pytest
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from dotenv import load_dotenv
 
 from app.main import app
@@ -11,22 +12,34 @@ from app.database import get_db
 
 load_dotenv()
 
-TEST_DATABASE_URL = os.getenv("DATABASE_URL") + "_test"  # type: ignore
-test_engine = create_async_engine(TEST_DATABASE_URL)
-test_session_maker = async_sessionmaker(test_engine, expire_on_commit=False)
 
-
-@pytest.fixture(autouse=True, scope="session")
-async def prepare_database():
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+@pytest.fixture(scope="session", autouse=True)
+async def setup_test_db():
+    ADMIN_URL = os.getenv("ADMIN_URL")  # type: ignore
+    admin_engine = create_async_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")  # type: ignore
+    async with admin_engine.connect() as conn:
+        await conn.execute(text("DROP DATABASE IF EXISTS organizations_db_test"))
+        await conn.execute(text("CREATE DATABASE organizations_db_test"))
+    await admin_engine.dispose()
 
 
 @pytest.fixture(scope="session")
-async def client():
+async def test_engine_fixture(setup_test_db):
+    TEST_DATABASE_URL = os.getenv("DATABASE_URL") + "_test"  # type: ignore
+    test_engine = create_async_engine(TEST_DATABASE_URL)
+
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield test_engine
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await test_engine.dispose()
+
+
+@pytest.fixture(scope="session")
+async def client(test_engine_fixture):
+    test_session_maker = async_sessionmaker(test_engine_fixture, expire_on_commit=False)
+
     async def override_get_async_session():
         async with test_session_maker() as session:
             yield session

@@ -10,11 +10,6 @@ import app.services as services
 router = APIRouter()  # prefix="/organizations", tags=["Organizations"])
 
 
-@router.post("/")
-async def create_org(db: AsyncSession = Depends(get_db)):
-    pass
-
-
 @router.get("/organizations/{id}", response_model=schemas.OrganizationRead)
 async def read_organization(id: int, db: AsyncSession = Depends(get_db)):
     return await services.get_organization_by_id(db, id)

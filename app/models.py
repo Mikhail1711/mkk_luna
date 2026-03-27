@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, Table
+from sqlalchemy import Column, Integer, ForeignKey, Table, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declarative_base
 
 
@@ -53,6 +53,15 @@ class Category(Base):
     )
     organizations: Mapped[list["Organization"]] = relationship(
         secondary=org_category_association, back_populates="categories", lazy="selectin"
+    )
+    __table_args__ = (
+        UniqueConstraint("name", "parent_id", name="unique_category_name_parent"),
+        Index(
+            "unique_root_category_name",
+            "name",
+            unique=True,
+            postgresql_where=(parent_id is None),
+        ),
     )
 
 
