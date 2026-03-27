@@ -48,7 +48,7 @@ async def test_category_depth_limit(client):
         "/categories/", json={"name": "L4", "parent_id": level_3}, headers=HEADERS
     )
     assert response.status_code == 400
-    assert "Превышена" in response.json()["detail"]
+    assert "Превышен" in response.json()["detail"]
 
     response = await client.get("/categories/", headers=HEADERS)
     assert len(response.json()) == 3

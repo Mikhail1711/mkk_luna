@@ -15,7 +15,7 @@ load_dotenv()
 
 @pytest.fixture(scope="session", autouse=True)
 async def setup_test_db():
-    ADMIN_URL = os.getenv("ADMIN_URL")  # type: ignore
+    ADMIN_URL = os.getenv("ADMIN_URL")
     admin_engine = create_async_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")  # type: ignore
     async with admin_engine.connect() as conn:
         await conn.execute(text("DROP DATABASE IF EXISTS organizations_db_test"))
