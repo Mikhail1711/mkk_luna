@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import selectinload
 from sqlalchemy import func, text, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from loguru import logger
 
 from app.models import Phone, Address, Category, Organization
 from app.schemas import CategoryCreate, OrganizationCreate
@@ -36,6 +37,7 @@ async def create_category(db: AsyncSession, data: CategoryCreate):
     db.add(new_cat)
     await db.commit()
     await db.refresh(new_cat)
+    logger.info(f"Создание категории {data.name}, родитель {data.parent_id}")
     return new_cat
 
 
@@ -61,11 +63,14 @@ async def create_organization(db: AsyncSession, data: OrganizationCreate):
     db.add(db_org)
     await db.commit()
     await db.refresh(db_org)
+    logger.info(f"Создание организации {data.name}, адрес: {data.address.raw_address}")
     return db_org
 
 
 async def get_list_categories(db: AsyncSession):
     query = select(Category)
+    logger.info("Отображение списка категорий")
+
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -93,6 +98,8 @@ async def get_list_by_category(db: AsyncSession, root_category_id: int):
         .filter(Category.id.in_(category_ids))
         .distinct()
     )
+    logger.info(f"Поиск по категории {root_category_id}")
+
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -107,6 +114,8 @@ async def get_organization_by_id(db: AsyncSession, id: int):
         )
         .where(Organization.id == id)
     )
+    logger.info(f"Поиск по ID {id}")
+
     result = await db.execute(query)
     return result.scalars().first()
 
@@ -121,6 +130,8 @@ async def get_organizations_by_name(db: AsyncSession, name: str):
         )
         .filter(Organization.name == name)
     )
+    logger.info(f"Поиск по названию {name}")
+
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -131,6 +142,8 @@ async def get_list_by_raw_address(db: AsyncSession, address_str: str):
         .join(Address)
         .filter(Address.raw_address.ilike(f"%{address_str}%"))
     )
+    logger.info(f"Поиск по адресу {address_str}")
+
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -149,6 +162,8 @@ async def get_list_in_box(
         .filter(lat_filter, lon_filter)
         .options(selectinload(Address.organizations))
     )
+    logger.info(f"Поиск в области LAT {sw_lat}, {ne_lat}, LON {sw_lon}, {ne_lon}")
+
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -175,5 +190,7 @@ async def get_list_in_radius(
         .filter(Address.longitude.between(lon - lon_delta, lon + lon_delta))
         .filter(distance_formula <= radius_km)
     )
+    logger.info(f"Поиск в радиусе {radius_km}км от LAT {lat}, LON {lon}")
+
     result = await db.execute(query)
     return result.scalars().all()
